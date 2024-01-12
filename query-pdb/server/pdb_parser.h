@@ -11,48 +11,54 @@
 #include <memory>
 #include <set>
 #include <string>
-
+#include <stdexcept>
 #include "handle_guard.h"
-
-struct field_info {
-  int64_t offset;
-  int64_t bitfield_offset;
-
-  field_info() : offset(-1), bitfield_offset(0) {}
-
-  std::map<std::string, int64_t> to_map() const { return {{"offset", offset}, {"bitfield_offset", bitfield_offset}}; }
-};
+#include <nlohmann/json.hpp>
 
 class pdb_parser {
  public:
   explicit pdb_parser(const std::string &filename);
 
-  std::map<std::string, int64_t> get_symbols(const std::set<std::string> &names) const;
+  nlohmann::json get_symbols(const std::set<std::string> &names) const;
 
-  std::map<std::string, std::map<std::string, field_info>> get_struct(const std::map<std::string, std::set<std::string>> &names) const;
+  nlohmann::json get_struct(const std::set<std::string> &names) const;
 
-  std::map<std::string, std::map<std::string, int64_t>> get_enum(const std::map<std::string, std::set<std::string>> &names) const;
+  nlohmann::json get_enum(const std::set<std::string> &names) const;
 
  private:
   handle_guard file_{};
 
-  static std::map<std::string, int64_t> get_symbols_impl(const PDB::RawFile &raw_file, const PDB::DBIStream &dbi_stream, const PDB::TPIStream &tpi_stream,
-                                                         const std::set<std::string> &names);
+  static nlohmann::json get_symbols_impl(
+      const PDB::RawFile &raw_file,
+      const PDB::DBIStream &dbi_stream,
+      const PDB::TPIStream &tpi_stream,
+      const std::set<std::string> &names);
 
-  static std::map<std::string, std::map<std::string, field_info>> get_struct_impl(const PDB::RawFile &raw_file, const PDB::DBIStream &dbi_stream, const PDB::TPIStream &tpi_stream,
-                                                                                  const std::map<std::string, std::set<std::string>> &names);
+  static nlohmann::json get_struct_impl(
+      const PDB::RawFile &raw_file,
+      const PDB::DBIStream &dbi_stream,
+      const PDB::TPIStream &tpi_stream,
+      const std::set<std::string> &names);
 
-  static std::map<std::string, field_info> get_struct_single(const PDB::TPIStream &tpi_stream, const PDB::CodeView::TPI::Record *record, const std::set<std::string> &names);
+  static std::map<std::string, int64_t > get_struct_single(
+      const PDB::TPIStream &tpi_stream,
+      const PDB::CodeView::TPI::Record *record);
 
-  static std::map<std::string, std::map<std::string, int64_t>> get_enum_impl(const PDB::RawFile &raw_file, const PDB::DBIStream &dbi_stream, const PDB::TPIStream &tpi_stream,
-                                                                             const std::map<std::string, std::set<std::string>> &names);
+  static nlohmann::json get_enum_impl(
+      const PDB::RawFile &raw_file,
+      const PDB::DBIStream &dbi_stream,
+      const PDB::TPIStream &tpi_stream,
+      const std::set<std::string> &names);
 
-  static std::map<std::string, int64_t> get_enum_single(const PDB::CodeView::TPI::Record *record, uint8_t underlying_type_size, const std::set<std::string> &names);
+  static std::map<std::string, int64_t> get_enum_single(
+      const PDB::CodeView::TPI::Record *record,
+      uint8_t underlying_type_size);
 
   template <typename F, typename... Args>
   auto call_with_pdb_stream(F f, Args &&...args) const {
     // sanity check
-    if (!file_.get().baseAddress || PDB::ValidateFile(file_.get().baseAddress) != PDB::ErrorCode::Success) {
+    if (!file_.get().baseAddress ||
+        PDB::ValidateFile(file_.get().baseAddress) != PDB::ErrorCode::Success) {
       throw std::runtime_error("invalid PDB file");
     }
 
@@ -67,8 +73,10 @@ class pdb_parser {
     }
 
     const PDB::DBIStream dbi_stream = PDB::CreateDBIStream(raw_file);
-    if (dbi_stream.HasValidImageSectionStream(raw_file) != PDB::ErrorCode::Success || dbi_stream.HasValidPublicSymbolStream(raw_file) != PDB::ErrorCode::Success ||
-        dbi_stream.HasValidGlobalSymbolStream(raw_file) != PDB::ErrorCode::Success || dbi_stream.HasValidSectionContributionStream(raw_file) != PDB::ErrorCode::Success) {
+    if (dbi_stream.HasValidImageSectionStream(raw_file) != PDB::ErrorCode::Success ||
+        dbi_stream.HasValidPublicSymbolStream(raw_file) != PDB::ErrorCode::Success ||
+        dbi_stream.HasValidGlobalSymbolStream(raw_file) != PDB::ErrorCode::Success ||
+        dbi_stream.HasValidSectionContributionStream(raw_file) != PDB::ErrorCode::Success) {
       throw std::runtime_error("invalid DBI streams");
     }
 
