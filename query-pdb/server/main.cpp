@@ -2,41 +2,27 @@
 #include <spdlog/sinks/daily_file_sink.h>
 #include <spdlog/spdlog.h>
 
-#include <cxxopts.hpp>
 #include <nlohmann/json.hpp>
 #include <set>
-#include <utility>
+#include <cstdlib>
 
 #include "downloader.h"
 #include "pdb_parser.h"
 
 int main(int argc, char *argv[]) {
-  cxxopts::Options option_parser("query-pdb", "pdb query server");
-  option_parser.add_options()
-      ("ip", "ip address", cxxopts::value<std::string>()->default_value("0.0.0.0"))
-      ("port", "port", cxxopts::value<uint16_t>()->default_value("8080"))
-      ("path", "download path", cxxopts::value<std::string>()->default_value("pdb"))
-      ("server", "download server",cxxopts::value<std::string>()->default_value("http://msdl.szdyg.cn/download/symbols/"))
-      ("log", "write log to file", cxxopts::value<bool>()->default_value("false"))("h,help", "print help");
-
-  auto parse_result = option_parser.parse(argc, argv);
-
-  if (parse_result.count("help")) {
-    std::cout << option_parser.help() << std::endl;
-    return 0;
-  }
-
-  const auto ip = parse_result["ip"].as<std::string>();
-  const auto port = parse_result["port"].as<uint16_t>();
-  const auto download_path = parse_result["path"].as<std::string>();
-  const auto download_server = parse_result["server"].as<std::string>();
-  const auto log_to_file = parse_result["log"].as<bool>();
+  std::string port = std::getenv("QUERY_PDB_PORT");
+  if (port.empty()) port = "7001";
+  std::string download_path = std::getenv("QUERY_PDB_PATH");
+  if (download_path.empty()) download_path = "pdb";
+  std::string msdl_server = std::getenv("QUERY_PDB_MSDL_SERVER");
+  if (msdl_server.empty()) msdl_server = "http://msdl.szdyg.cn/download/symbols/";
+  const auto log_to_file = false;
 
   if (log_to_file) {
     spdlog::set_default_logger(spdlog::daily_logger_mt("query-pdb", "server.log"));
   }
 
-  downloader storage(download_path, download_server);
+  downloader storage(download_path, msdl_server);
   if (!storage.valid()) {
     spdlog::error("exit due to downloader invalid");
     return 1;
@@ -146,6 +132,6 @@ int main(int argc, char *argv[]) {
     res.set_content(result.dump(), "application/json");
   });
 
-  server.listen(ip, port);
+  server.listen("0.0.0.0", std::stoi(port));
   return 0;
 }

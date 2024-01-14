@@ -25,7 +25,6 @@ target_link_libraries(
         PRIVATE
         raw_pdb
         spdlog
-        cxxopts
         nlohmann_json
         httplib
 )
