@@ -18,4 +18,5 @@ RUN cd /query-pdb && \
     cmake .. && \
     cmake --build . --target query_pdb_server
 
-ENTRYPOINT ["/usr/bin/supervisord", "-c", "/query-pdb/supervisord.conf"]
+WORKDIR /query-pdb
+ENTRYPOINT ["/query-pdb/build/server/query_pdb_server"]

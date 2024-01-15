@@ -5,7 +5,7 @@ networks:
     external: false
 
 services:
-  server:
+  query-pdb:
     container_name: query-pdb
     image: szdyg/query-pdb
     environment:
@@ -19,9 +19,9 @@ services:
     volumes:
       - ./pdb:/pdb
 
-  server:
+  query-pdb-proxy:
     container_name: query-pdb-proxy
-    image: szdyg/query-pdb
+    image: szdyg/query-pdb-proxy
     environment:
       TIME_ZONE: Asia/Shanghai
       QUERY_PDB_PROXY_MONGODB: mongodb://mongodb:BPTFFcXU9l7r2qnt@mongodb:27017/
