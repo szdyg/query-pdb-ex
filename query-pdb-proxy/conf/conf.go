@@ -26,7 +26,7 @@ func init() {
 		PdbPath = "/pdb"
 	}
 	QueryPdbServer = os.Getenv("QUERY_PDB_PROXY_REAL_SERVER")
-	if len(MongoDSN) == 0 {
+	if len(QueryPdbServer) == 0 {
 		panic("QUERY_PDB_PROXY_REAL_SERVER is empty")
 	}
 	MsdlServer = os.Getenv("QUERY_PDB_PROXY_MSDL_SERVER")

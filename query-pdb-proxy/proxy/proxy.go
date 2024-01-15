@@ -77,7 +77,7 @@ func proxyProc(c *gin.Context, queryType string) {
 		// 2. download pdb
 		pdbSavePath := path.Join(conf.PdbPath, param.Name, param.Msdl, param.Name)
 		err = downloadPdb(param.Name, param.Msdl, pdbSavePath)
-		if err == nil {
+		if err != nil {
 			defer os.Remove(pdbSavePath)
 		}
 		// 3. query real server
