@@ -56,7 +56,7 @@ func proxyEnum(c *gin.Context) {
 
 func proxyProc(c *gin.Context, queryType string) {
 	param := proxyParam{}
-	c.BindJSON(param)
+	c.BindJSON(&param)
 	if len(param.Name) == 0 || len(param.Msdl) == 0 || len(param.Query) == 0 {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"err": "invaild param",
@@ -65,6 +65,9 @@ func proxyProc(c *gin.Context, queryType string) {
 	}
 	result := make(map[string]interface{})
 	for _, name := range param.Query {
+		if len(name) == 0 {
+			continue
+		}
 		// 1. find database
 		off, err := queryPdbInfoFromDb(queryType, param.Name, param.Msdl, name)
 		if err == nil {
