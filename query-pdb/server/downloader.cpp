@@ -58,13 +58,7 @@ std::filesystem::path downloader::get_path(const std::string &name, const std::s
 bool downloader::download_impl(const std::string &relative_path) {
   spdlog::info("download pdb, path: {}", relative_path);
 
-  auto it = download_mutexs_.find(relative_path);
-  if (it == download_mutexs_.end()) {
-    std::unique_lock<std::mutex> lock(mutex_);
-    download_mutexs_[relative_path] = std::make_unique<std::mutex>();
-  }
-  std::unique_lock<std::mutex> lock_dl(*download_mutexs_[relative_path]);
-
+  std::lock_guard<std::mutex> lock(mutex_);
   auto path = std::filesystem::path(path_).append(relative_path);
   std::filesystem::create_directories(path.parent_path());
 

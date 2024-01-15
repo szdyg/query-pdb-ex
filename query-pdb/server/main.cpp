@@ -11,11 +11,14 @@
 
 int main(int argc, char *argv[]) {
   std::string port = std::getenv("QUERY_PDB_PORT");
-  if (port.empty()) port = "7001";
+  if (port.empty())
+    port = "80";
   std::string download_path = std::getenv("QUERY_PDB_PATH");
-  if (download_path.empty()) download_path = "/pdb";
+  if (download_path.empty())
+    download_path = "/pdb";
   std::string msdl_server = std::getenv("QUERY_PDB_MSDL_SERVER");
-  if (msdl_server.empty()) msdl_server = "http://msdl.szdyg.cn/download/symbols/";
+  if (msdl_server.empty())
+    msdl_server = "http://msdl.microsoft.com/download/symbols/";
   const auto log_to_file = false;
 
   if (log_to_file) {

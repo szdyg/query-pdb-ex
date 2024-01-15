@@ -30,7 +30,6 @@ private:
     std::string server_;
     std::pair<std::string, std::string> server_split_;
     std::mutex mutex_;
-    std::unordered_map<std::string, std::unique_ptr<std::mutex>> download_mutexs_;
 };
 
 #endif //QUERY_PDB_SERVER_DOWNLOADER_H
