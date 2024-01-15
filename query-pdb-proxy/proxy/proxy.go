@@ -150,7 +150,7 @@ func downloadPdb(pdbName string, msdl string, pdbSavePath string) (err error) {
 		// already download
 		return
 	}
-	pdbUrl := conf.MsdlServer + "/" + pdbName + "/" + msdl + "/" + pdbName
+	pdbUrl := conf.MsdlServer + pdbName + "/" + msdl + "/" + pdbName
 	res, err := http.Get(pdbUrl)
 	if err != nil {
 		return

@@ -1,0 +1,51 @@
+version: "3"
+
+networks:
+  query-pdb-ex:
+    external: false
+
+services:
+  server:
+    container_name: query-pdb
+    image: szdyg/query-pdb
+    environment:
+      TIME_ZONE: Asia/Shanghai
+      QUERY_PDB_PORT: 80
+      QUERY_PDB_PATH: /pdb
+      QUERY_PDB_MSDL_SERVER: https://msdl.szdyg.cn/download/symbols/
+    restart: always
+    networks:
+      - query-pdb-ex
+    volumes:
+      - ./pdb:/pdb
+
+  server:
+    container_name: query-pdb-proxy
+    image: szdyg/query-pdb
+    environment:
+      TIME_ZONE: Asia/Shanghai
+      QUERY_PDB_PROXY_MONGODB: mongodb://mongodb:BPTFFcXU9l7r2qnt@mongodb:27017/
+      QUERY_PDB_PROXY_PORT: 80
+      QUERY_PDB_PROXY_PATH: /pdb
+      QUERY_PDB_PROXY_REAL_SERVER: http://query-pdb
+      QUERY_PDB_PROXY_MSDL_SERVER: https://msdl.szdyg.cn/download/symbols/
+    restart: always
+    networks:
+      - query-pdb-ex
+    volumes:
+      - ./pdb:/pdb
+    ports:
+      - "6000:80"
+
+  mongodb:
+    container_name: mongodb
+    image: mongo:7.0.5
+    restart: always
+    environment:
+      TIME_ZONE: Asia/Shanghai
+      MONGO_INITDB_ROOT_USERNAME: mongodb
+      MONGO_INITDB_ROOT_PASSWORD: BPTFFcXU9l7r2qnt
+    networks:
+      - query-pdb-ex
+    volumes:
+      - ./data:/data/db

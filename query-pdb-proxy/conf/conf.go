@@ -31,6 +31,6 @@ func init() {
 	}
 	MsdlServer = os.Getenv("QUERY_PDB_PROXY_MSDL_SERVER")
 	if len(MsdlServer) == 0 {
-		MsdlServer = "http://msdl.microsoft.com/download/symbols"
+		MsdlServer = "http://msdl.microsoft.com/download/symbols/"
 	}
 }
