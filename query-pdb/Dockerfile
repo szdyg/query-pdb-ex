@@ -2,7 +2,8 @@ FROM ubuntu:22.04
 
 MAINTAINER szdyg
 
-RUN apt-get update
+RUN apt-get update && \
+    mkdir -p /pdb
 
 RUN apt-get install -y \
     build-essential \
