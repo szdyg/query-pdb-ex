@@ -12,7 +12,9 @@ query-pdb-ex是一个基于 [zouxianyu/query-pdb](https://github.com/zouxianyu/q
 
 # 测试接口
 
-测试服务器为  http://query-pdb.szdyg.cn/    https://query-pdb.szdyg.cn/
+测试服务器为
+http://query-pdb.szdyg.cn/
+https://query-pdb.szdyg.cn/
 
 请求参数为
 
