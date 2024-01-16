@@ -158,16 +158,16 @@ query：查询的结构名称
 
 ```json
 {
-	"_OBJECT_INFORMATION_CLASS": {
-		"MaxObjectInfoClass": 7,
-		"ObjectBasicInformation": 0,
-		"ObjectHandleFlagInformation": 4,
-		"ObjectNameInformation": 1,
-		"ObjectSessionInformation": 5,
-		"ObjectSessionObjectInformation": 6,
-		"ObjectTypeInformation": 2,
-		"ObjectTypesInformation": 3
-	}
+    "_OBJECT_INFORMATION_CLASS": {
+        "MaxObjectInfoClass": 7,
+        "ObjectBasicInformation": 0,
+        "ObjectHandleFlagInformation": 4,
+        "ObjectNameInformation": 1,
+        "ObjectSessionInformation": 5,
+        "ObjectSessionObjectInformation": 6,
+        "ObjectTypeInformation": 2,
+        "ObjectTypesInformation": 3
+    }
 }
 ```
 
