@@ -11,8 +11,8 @@ import (
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	"go.uber.org/zap"
 	"io"
-	"log"
 	"net/http"
 	"os"
 	"path"
@@ -20,15 +20,20 @@ import (
 	"time"
 )
 
-var mongoClient *mongo.Client
+var (
+	mongoClient *mongo.Client
+	logger      *zap.Logger
+)
 
 func InitRoute(r *gin.Engine) {
+	logger, _ = zap.NewProduction()
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 	var err error
 	mongoClient, err = mongo.Connect(ctx, options.Client().ApplyURI(conf.MongoDSN).SetMaxPoolSize(200))
 	if err != nil {
-		log.Fatal("connect db err :", err)
+		logger.DPanic("connect db err", zap.Error(err))
+		panic("connect db err")
 	}
 
 	r.POST("/symbol", proxySymbol)
@@ -78,11 +83,19 @@ func proxyProc(c *gin.Context, queryType string) {
 		pdbSavePath := path.Join(conf.PdbPath, param.Name, param.Msdl, param.Name)
 		err = downloadPdb(param.Name, param.Msdl, pdbSavePath)
 		if err != nil {
+			logger.Error("download pdb error",
+				zap.String("name", param.Name),
+				zap.String("msdl", param.Msdl),
+				zap.Error(err))
 			defer os.Remove(pdbSavePath)
 		}
 		// 3. query real server
 		off, err = querySymbolFromServer(queryType, param.Name, param.Msdl, name)
 		if err != nil {
+			logger.Error("query server error",
+				zap.String("name", param.Name),
+				zap.String("msdl", param.Msdl),
+				zap.Error(err))
 			continue
 		}
 		result[name] = off
@@ -98,8 +111,13 @@ func queryPdbInfoFromDb(queryType string, pdbName string, msdl string, queryName
 	collection := mongoClient.Database("pdb").Collection(queryType)
 	filter := bson.M{"pdb_id": pdbId}
 	var pdbSetInfo bson.M
-	err = collection.FindOne(context.TODO(), filter).Decode(pdbSetInfo)
+	err = collection.FindOne(context.TODO(), filter).Decode(&pdbSetInfo)
 	if err != nil {
+		logger.Warn("not find pdb info in db",
+			zap.String("name", pdbName),
+			zap.String("msdl", queryType),
+			zap.String("query", queryName),
+			zap.Error(err))
 		return
 	}
 	if vaule, ok := pdbSetInfo[queryName]; ok {
@@ -127,11 +145,17 @@ func querySymbolFromServer(queryType string, pdbName string, msdl string, queryN
 		SetBody(paramJson).
 		Post(serverUrl)
 	if err != nil {
+		logger.Error("req real server err",
+			zap.String("name", pdbName),
+			zap.String("msdl", queryType),
+			zap.String("query", queryName),
+			zap.Error(err))
 		return
 	}
 
 	if resp.StatusCode() != http.StatusOK {
 		err = errors.New(fmt.Sprintf("query-pdb server error: %d", resp.StatusCode()))
+		logger.Error("query-pdb server error", zap.Error(err))
 		return
 	}
 	result := make(map[string]interface{})
@@ -156,12 +180,14 @@ func downloadPdb(pdbName string, msdl string, pdbSavePath string) (err error) {
 	pdbUrl := conf.MsdlServer + pdbName + "/" + msdl + "/" + pdbName
 	res, err := http.Get(pdbUrl)
 	if err != nil {
+		logger.Error("http get pdb err", zap.Error(err), zap.String("url", pdbUrl))
 		return
 	}
 	defer res.Body.Close()
 
 	if res.StatusCode != 200 {
-		err = errors.New(fmt.Sprintf("msdl server error: %d", res.StatusCode))
+		err = errors.New(fmt.Sprintf("msdl server err: %d", res.StatusCode))
+		logger.Error("msdl server err", zap.Error(err))
 		return
 	}
 
@@ -172,16 +198,22 @@ func downloadPdb(pdbName string, msdl string, pdbSavePath string) (err error) {
 	pdbFile, err := os.Create(pdbSavePath)
 	defer pdbFile.Close()
 	if err != nil {
+		logger.Error("create pdb file err", zap.Error(err), zap.String("path", pdbSavePath))
 		return
 	}
 
 	buf := bufio.NewWriter(pdbFile)
 	_, err = io.Copy(buf, res.Body)
 	if err != nil {
+		logger.Error("copy pdb file buf err", zap.Error(err), zap.String("path", pdbSavePath))
 		return
 	}
 
 	err = buf.Flush()
+	if err != nil {
+		logger.Error("flush pdb file buf err", zap.Error(err), zap.String("path", pdbSavePath))
+		return
+	}
 	return
 }
 
@@ -189,10 +221,10 @@ func SaveQueryPdbServerToDb(queryType string, pdbName string, msdl string, pdbIn
 	pdbId := pdbName + "." + msdl
 	collection := mongoClient.Database("pdb").Collection(queryType)
 
+	pdbInfo["pdb_id"] = pdbId
 	updateInfo := bson.M{
 		"$set": pdbInfo,
 	}
-
 	filter := bson.M{"pdb_id": pdbId}
 
 	upsert := true
@@ -200,6 +232,9 @@ func SaveQueryPdbServerToDb(queryType string, pdbName string, msdl string, pdbIn
 		Upsert: &upsert,
 	}
 	_, err = collection.UpdateOne(context.TODO(), filter, updateInfo, &updateOptions)
+	if err != nil {
+		logger.Error("save db error", zap.Error(err))
+	}
 
 	return
 }
